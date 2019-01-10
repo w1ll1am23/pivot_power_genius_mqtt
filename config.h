@@ -1,7 +1,6 @@
 // MQTT Parameters
 #define MQTT_BROKER "MQTT_BROKER_IP"
 #define MQTT_CLIENT_ID "pivotPowerGenius"
-#define MQTT_CLIENT_ID_POSTFIX ""
 
 #define MQTT_AVAILABILITY_TOPIC "/availability"
 
@@ -24,10 +23,10 @@
 #define OTA_PORT 8266
 
 // PIN setup
-#define OUTLET_1_BUTTON_PIN    4
-#define OUTLET_2_BUTTON_PIN    5
-#define OUTLET_1_PIN 12
-#define OUTLET_2_PIN 13
+#define OUTLET_1_BUTTON_PIN 13
+#define OUTLET_2_BUTTON_PIN 12
+#define OUTLET_1_PIN  4
+#define OUTLET_2_PIN 5
 
 // WiFi manager stuff
 #define SETUP_AP_PASSWORD "password12345"

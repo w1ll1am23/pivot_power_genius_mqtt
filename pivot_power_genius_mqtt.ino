@@ -17,6 +17,7 @@ char mqtt_server[40] = "";
 char mqtt_port[6] = "1883";
 char username[34] = "";
 char password[34] = "";
+char mqtt_client_id[34] = MQTT_CLIENT_ID;
 
 
 /**************************** FOR OTA **************************************************/
@@ -26,25 +27,22 @@ int ota_port = OTA_PORT;
 
 /************* MQTT TOPICS  **************************/
 String client_id_string = MQTT_CLIENT_ID;
-String client_id_postfix = MQTT_CLIENT_ID_POSTFIX;
-String full_client_id_string = client_id_string + client_id_postfix;
-const char* client_id = full_client_id_string.c_str();
 
-String availability_topic_str = full_client_id_string + MQTT_AVAILABILITY_TOPIC;
+String availability_topic_str = client_id_string + MQTT_AVAILABILITY_TOPIC;
 const char* availability_topic = availability_topic_str.c_str();
 
-String outlet_1_state_topic_str = full_client_id_string + MQTT_OUTLET_1_STATE_TOPIC;
+String outlet_1_state_topic_str = client_id_string + MQTT_OUTLET_1_STATE_TOPIC;
 const char* outlet_1_state_topic = outlet_1_state_topic_str.c_str();
-String outlet_2_state_topic_str = full_client_id_string + MQTT_OUTLET_2_STATE_TOPIC;
+String outlet_2_state_topic_str = client_id_string + MQTT_OUTLET_2_STATE_TOPIC;
 const char* outlet_2_state_topic = outlet_2_state_topic_str.c_str();
-String outlets_state_topic_str = full_client_id_string + MQTT_OUTLETS_STATE_TOPIC;
+String outlets_state_topic_str = client_id_string + MQTT_OUTLETS_STATE_TOPIC;
 const char* outlets_state_topic = outlets_state_topic_str.c_str();
 
-String outlet_1_command_topic_str = full_client_id_string + MQTT_OUTLET_1_COMMAND_TOPIC;
+String outlet_1_command_topic_str = client_id_string + MQTT_OUTLET_1_COMMAND_TOPIC;
 const char* outlet_1_command_topic = outlet_1_command_topic_str.c_str();
-String outlet_2_command_topic_str = full_client_id_string + MQTT_OUTLET_2_COMMAND_TOPIC;
+String outlet_2_command_topic_str = client_id_string + MQTT_OUTLET_2_COMMAND_TOPIC;
 const char* outlet_2_command_topic = outlet_2_command_topic_str.c_str();
-String outlets_command_topic_str = full_client_id_string + MQTT_OUTLETS_COMMAND_TOPIC;
+String outlets_command_topic_str = client_id_string + MQTT_OUTLETS_COMMAND_TOPIC;
 const char* outlets_command_topic = outlets_command_topic_str.c_str();
 
 const char* on_cmd = MQTT_ON_COMMAND;
@@ -106,6 +104,7 @@ void setup() {
           strcpy(mqtt_port, json["mqtt_port"]);
           strcpy(username, json["username"]);
           strcpy(password, json["password"]);
+          strcpy(mqtt_client_id, json["client_id"]);
 
         } else {
           Serial.println("failed to load json config");
@@ -133,6 +132,7 @@ void setup() {
   WiFiManagerParameter custom_mqtt_port("port", "mqtt port", mqtt_port, 5);
   WiFiManagerParameter custom_username("username", "username", username, 32);
   WiFiManagerParameter custom_password("password", "password", password, 32);
+  WiFiManagerParameter custom_mqtt_client_id("client_id", "client_id", mqtt_client_id, 32);
 
   //WiFiManager
   //Local intialization. Once its business is done, there is no need to keep it around
@@ -141,12 +141,12 @@ void setup() {
   //set config save notify callback
   wifiManager.setSaveConfigCallback(saveConfigCallback);
 
-
   //add all your parameters here
   wifiManager.addParameter(&custom_mqtt_server);
   wifiManager.addParameter(&custom_mqtt_port);
   wifiManager.addParameter(&custom_username);
   wifiManager.addParameter(&custom_password);
+  wifiManager.addParameter(&custom_mqtt_client_id);
 
   //reset settings
   //wifiManager.resetSettings();
@@ -171,6 +171,7 @@ void setup() {
   strcpy(mqtt_port, custom_mqtt_port.getValue());
   strcpy(username, custom_username.getValue());
   strcpy(password, custom_password.getValue());
+  strcpy(mqtt_client_id, custom_mqtt_client_id.getValue());
 
   //save the custom parameters to FS
   if (shouldSaveConfig) {
@@ -181,6 +182,7 @@ void setup() {
     json["mqtt_port"] = mqtt_port;
     json["username"] = username;
     json["password"] = password;
+    json["client_id"] = mqtt_client_id;
 
     File configFile = SPIFFS.open("/config.json", "w");
     if (!configFile) {
@@ -192,6 +194,25 @@ void setup() {
     configFile.close();
     //end save
   }
+
+  String client_id_string = String(mqtt_client_id);
+
+  availability_topic_str = client_id_string + MQTT_AVAILABILITY_TOPIC;
+  availability_topic = availability_topic_str.c_str();
+
+  outlet_1_state_topic_str = client_id_string + MQTT_OUTLET_1_STATE_TOPIC;
+  outlet_1_state_topic = outlet_1_state_topic_str.c_str();
+  outlet_2_state_topic_str = client_id_string + MQTT_OUTLET_2_STATE_TOPIC;
+  outlet_2_state_topic = outlet_2_state_topic_str.c_str();
+  outlets_state_topic_str = client_id_string + MQTT_OUTLETS_STATE_TOPIC;
+  outlets_state_topic = outlets_state_topic_str.c_str();
+
+  outlet_1_command_topic_str = client_id_string + MQTT_OUTLET_1_COMMAND_TOPIC;
+  outlet_1_command_topic = outlet_1_command_topic_str.c_str();
+  outlet_2_command_topic_str = client_id_string + MQTT_OUTLET_2_COMMAND_TOPIC;
+  outlet_2_command_topic = outlet_2_command_topic_str.c_str();
+  outlets_command_topic_str = client_id_string + MQTT_OUTLETS_COMMAND_TOPIC;
+  outlets_command_topic = outlets_command_topic_str.c_str();
 
   client.setServer(mqtt_server, atoi(mqtt_port)); // parseInt to the port
   client.setCallback(callback);
@@ -227,8 +248,6 @@ void setup() {
   Serial.println(WiFi.localIP());
 
 }
-
-
 
 /********************************** START CALLBACK*****************************************/
 void callback(char* topic, byte* payload, unsigned int length) {
@@ -386,7 +405,7 @@ void reconnect() {
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
     // Attempt to connect
-    if (client.connect(client_id, username, password, availability_topic, 0, true, lwt_message)) {
+    if (client.connect(mqtt_client_id, username, password, availability_topic, 0, true, lwt_message)) {
       Serial.println("connected");
       client.subscribe(outlet_1_command_topic);
       client.subscribe(outlet_2_command_topic);
