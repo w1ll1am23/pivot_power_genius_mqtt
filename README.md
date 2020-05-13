@@ -1,6 +1,72 @@
 # pivot_power_genius_mqtt
 esp8266 replacement for the Electric Imp in the Quirky Pivot Power Genius
 
+Don't use this code, it's terrible.
+
+Use either Tasmota or ESPHome
+
+ESPHome example:
+
+```yaml
+esphome:
+  name: power_strip
+  platform: ESP8266
+  board: d1_mini
+
+wifi:
+  ssid: "WIFI"
+  password: "WIFI_PASSWORD"
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Power Strip"
+    password: "pivotpower"
+
+captive_portal:
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+
+ota:
+
+switch:
+  - platform: gpio
+    pin: GPIO5
+    name: "outlet 2"
+    id: "outlet2"
+  - platform: gpio
+    pin: GPIO4
+    name: "outlet 1"
+    id: "outlet1"
+
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: GPIO12
+      mode: INPUT_PULLUP
+      inverted: True
+    name: "outlet 2 button"
+    internal: true
+    on_click:
+      min_length: 100ms
+      then:
+        - switch.toggle: "outlet2"
+  - platform: gpio
+    pin:
+      number: GPIO14
+      mode: INPUT_PULLUP
+      inverted: True
+    name: "outlet 1 button"
+    internal: true
+    on_click:
+      min_length: 100ms
+      then:
+        - switch.toggle: "outlet1"
+```
+
 This code works on the Adafruit Huzzah, but doesn't work on Wemos D1 mini. I am not sure why. However is you are using a Wemos or any other esp8266 and it doesn't I had success use the Tasmota firmware and setting the module as generic, and assigning relays and buttons to the correct PINs. 
 
 This repo contains all of the data on how to convert your Quirky Pivot power Genius to a 100% local MQTT driven device. 
